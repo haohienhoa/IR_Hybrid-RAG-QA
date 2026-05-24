@@ -1,0 +1,11 @@
+langchain
+langchain-core
+langchain-community
+langchain-huggingface
+huggingface-hub
+langgraph
+chromadb
+ir_datasets
+rank_bm25
+python-dotenv
+sentence-transformers

@@ -1,43 +1,48 @@
 from typing import TypedDict, List
 from langchain_core.documents import Document
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langgraph.graph import StateGraph, END
-from src.config import LLM_MODEL
+from src.config import LLM_MODEL, HF_TOKEN
 
-# 1. Định nghĩa trạng thái của Agent
 class AgentState(TypedDict):
     query: str
     context: List[Document]
     answer: str
 
 def create_agent_graph(retriever):
-    llm = ChatGoogleGenerativeAI(model=LLM_MODEL)
+    llm_endpoint = HuggingFaceEndpoint(
+        repo_id=LLM_MODEL,
+        task="text-generation",
+        max_new_tokens=512,
+        temperature=0.1,
+        do_sample=True,
+        huggingfacehub_api_token=HF_TOKEN
+    )
+    llm = ChatHuggingFace(llm=llm_endpoint)
 
-    # Node 1: Tìm kiếm tài liệu
     def retrieve_node(state: AgentState):
-        print(f"\n[Agent: Tìm kiếm] Đang tìm ngữ cảnh cho câu hỏi: '{state['query']}'...")
+        print(f"\n[Agent: Tìm kiếm] Đang đọc tài liệu cho: '{state['query']}'...")
         documents = retriever.invoke(state["query"])
         return {"context": documents}
 
-    # Node 2: Sinh câu trả lời
     def generate_node(state: AgentState):
-        print("[Agent: Tư duy] Đang tổng hợp thông tin để trả lời...")
+        print(f"[Agent: Tư duy ({LLM_MODEL})] Đang tổng hợp thông tin...")
         context_text = "\n\n".join([d.page_content for d in state["context"]])
         
-        prompt = f"""Bạn là một trợ lý ảo thông minh cho ngành kỹ thuật hàng không. 
-        Sử dụng BẮT BUỘC các tài liệu dưới đây để trả lời câu hỏi. Nếu tài liệu không có thông tin, hãy nói "Tôi không tìm thấy thông tin trong dữ liệu".
+        prompt = f"""Bạn là một chuyên gia kỹ thuật hàng không. Dựa vào các TÀI LIỆU dưới đây, hãy trả lời CÂU HỎI. 
+        Nếu tài liệu tiếng Anh, hãy tự dịch và TRẢ LỜI BẰNG TIẾNG VIỆT thật tự nhiên.
+        Tuyệt đối không bịa đặt thông tin.
         
         TÀI LIỆU:
         {context_text}
         
         CÂU HỎI: {state['query']}
         
-        TRẢ LỜI CỦA BẠN:"""
+        TRẢ LỜI:"""
         
         response = llm.invoke(prompt)
         return {"answer": response.content}
 
-    # Khởi tạo Graph
     workflow = StateGraph(AgentState)
     workflow.add_node("retrieve", retrieve_node)
     workflow.add_node("generate", generate_node)

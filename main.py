@@ -3,20 +3,19 @@ from src.retriever import build_hybrid_retriever
 from src.agent import create_agent_graph
 
 def main():
-    print("="*50)
-    print(" KHỞI ĐỘNG HỆ THỐNG AGENTIC RAG (FAISS + BM25) ")
-    print("="*50)
+    print("="*60)
+    print(" KHỞI ĐỘNG HỆ THỐNG")
+    print("="*60)
     
-    # 1. Pipeline thiết lập
     docs = load_cranfield_docs()
     hybrid_retriever = build_hybrid_retriever(docs)
+    
     agent_app = create_agent_graph(hybrid_retriever)
     
-    # 2. Vòng lặp tương tác (Chat interface)
-    print("\n HỆ THỐNG ĐÃ SẴN SÀNG! (Gõ 'exit' hoặc 'quit' để thoát)")
+    print("\n HỆ THỐNG SẴN SÀNG! (Gõ 'quit' để thoát)")
     while True:
-        user_query = input("\n👤 Câu hỏi của bạn: ")
-        if user_query.lower() in ['exit', 'quit']:
+        user_query = input("\n👤 Câu hỏi: ")
+        if user_query.lower() == "quit":
             print("Tạm biệt!")
             break
             
@@ -28,7 +27,7 @@ def main():
         
         print("\n Trả lời:")
         print(result['answer'])
-        print("-" * 50)
+        print("-" * 60)
 
 if __name__ == "__main__":
     main()
