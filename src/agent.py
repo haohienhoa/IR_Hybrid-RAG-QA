@@ -1,54 +1,56 @@
-from typing import TypedDict, List
-from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
-from langgraph.graph import StateGraph, END
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from src.config import LLM_MODEL, HF_TOKEN
 
-class AgentState(TypedDict):
-    query: str
-    context: List[Document]
-    answer: str
-
-def create_agent_graph(retriever):
+def create_rag_chain(retriever):
     llm_endpoint = HuggingFaceEndpoint(
         repo_id=LLM_MODEL,
         task="text-generation",
-        max_new_tokens=512,
+        max_new_tokens=1024,
         temperature=0.1,
         do_sample=True,
         huggingfacehub_api_token=HF_TOKEN
     )
     llm = ChatHuggingFace(llm=llm_endpoint)
 
-    def retrieve_node(state: AgentState):
-        print(f"\n[Agent: Tìm kiếm] Đang đọc tài liệu cho: '{state['query']}'...")
-        documents = retriever.invoke(state["query"])
-        return {"context": documents}
+    prompt_template = """You are an elite Aerospace Engineering AI. Answer the user's query using ONLY the provided Context.
+        
+PROCESS:
+1. <thought>: Analyze the context step-by-step. If the context does not contain the answer, explicitly state it here.
+2. <answer>: Provide a professional, Markdown-formatted answer. If no information is found, output "Information not found in the documents."
 
-    def generate_node(state: AgentState):
-        print(f"[Agent: Tư duy ({LLM_MODEL})] Đang tổng hợp thông tin...")
-        context_text = "\n\n".join([d.page_content for d in state["context"]])
-        
-        prompt = f"""Bạn là một chuyên gia kỹ thuật hàng không. Dựa vào các TÀI LIỆU dưới đây, hãy trả lời CÂU HỎI. 
-        Nếu tài liệu tiếng Anh, hãy tự dịch và TRẢ LỜI BẰNG TIẾNG VIỆT thật tự nhiên.
-        Tuyệt đối không bịa đặt thông tin.
-        
-        TÀI LIỆU:
-        {context_text}
-        
-        CÂU HỎI: {state['query']}
-        
-        TRẢ LỜI:"""
-        
-        response = llm.invoke(prompt)
-        return {"answer": response.content}
+--- FEW-SHOT EXAMPLE ---
+Context: 
+Doc 1: The wing sweepback delays the onset of wave drag.
+Query: What is the purpose of wing sweepback?
+<thought>
+The context mentions "wing sweepback" and states its effect is to "delay the onset of wave drag". I will output this as the answer.
+</thought>
+<answer>
+**Purpose of Wing Sweepback:**
+The primary purpose is to **delay the onset of wave drag**.
+</answer>
+------------------------
 
-    workflow = StateGraph(AgentState)
-    workflow.add_node("retrieve", retrieve_node)
-    workflow.add_node("generate", generate_node)
+--- ACTUAL TASK ---
+Context:
+{context}
+
+Query: {query}
+"""
+    prompt = PromptTemplate.from_template(prompt_template)
+
+    def format_docs(docs):
+        print(f"\n[Retriever] Found {len(docs)} documents. Feeding to LLM...")
+        return "\n\n".join([f"Doc {i+1}: {d.page_content}" for i, d in enumerate(docs)])
+
+    rag_chain = (
+        {"context": retriever | format_docs, "query": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
     
-    workflow.set_entry_point("retrieve")
-    workflow.add_edge("retrieve", "generate")
-    workflow.add_edge("generate", END)
-    
-    return workflow.compile()
+    return rag_chain
