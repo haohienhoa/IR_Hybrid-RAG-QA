@@ -7,7 +7,6 @@ This project implements a highly optimized Retrieval-Augmented Generation (RAG) 
 
 * **Hybrid Search Retrieval:** Combines lexical search (BM25) to capture exact academic keywords and semantic search (ChromaDB) to understand context. The results are merged using Reciprocal Rank Fusion (RRF).
 * **Local Embedding for Privacy:** Uses `all-MiniLM-L6-v2` running entirely locally (CPU-friendly) to ensure sensitive documents are never exposed to external APIs.
-* **LangChain Expression Language (LCEL):** Replaces heavy graph-based workflows with a streamlined, linear LCEL pipeline for maximum memory efficiency and speed.
 * **Zero-Hallucination Mechanism:** Implements Few-Shot Chain-of-Thought (CoT) prompting. The LLM is forced to analyze the context in a `<thought>` block before outputting the `<answer>`, ensuring strict adherence to the provided documents and explicit refusal when information is absent.
 
 ## Technology Stack
