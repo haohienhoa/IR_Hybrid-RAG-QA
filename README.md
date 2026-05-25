@@ -20,13 +20,13 @@ This project implements a highly optimized Retrieval-Augmented Generation (RAG) 
 ## Project Structure
 ```text
 .
-├── data/                   # Auto-generated directory for ChromaDB local storage
+├── data/                  
 ├── src/
-│   ├── config.py           # Centralized configuration and model selection
-│   ├── data_loader.py      # Data ingestion from ir_datasets
-│   ├── retriever.py        # Hybrid Search (BM25 + Chroma) implementation
-│   └── rag_chain.py        # LCEL pipeline and Few-Shot CoT logic
-├── .env                    # Environment variables (not tracked by git)
+│   ├── config.py           
+│   ├── data_loader.py     
+│   ├── retriever.py        
+│   └── rag_chain.py       
+├── .env                   
 ├── .gitignore
-├── requirements.txt        # Project dependencies
-└── main.py                 # Application entry point
+├── requirements.txt       
+└── main.py                 
