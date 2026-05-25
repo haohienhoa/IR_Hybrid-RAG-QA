@@ -1,6 +1,6 @@
 from src.data_loader import load_cranfield_docs
 from src.retriever import build_hybrid_retriever
-from src.agent import create_agent_graph
+from src.agent import create_rag_chain  
 
 def main():
     print("="*60)
@@ -10,11 +10,11 @@ def main():
     docs = load_cranfield_docs()
     hybrid_retriever = build_hybrid_retriever(docs)
     
-    agent_app = create_agent_graph(hybrid_retriever)
+    rag_chain = create_rag_chain(hybrid_retriever)
     
-    print("\n HỆ THỐNG SẴN SÀNG! (Gõ 'quit' để thoát)")
+    print("\n HỆ THỐNG ĐÃ SẴN SÀNG! (Gõ 'quit' để thoát)")
     while True:
-        user_query = input("\n👤 Câu hỏi: ")
+        user_query = input("\nCâu hỏi: ")
         if user_query.lower() == "quit":
             print("Tạm biệt!")
             break
@@ -22,11 +22,10 @@ def main():
         if not user_query.strip():
             continue
             
-        inputs = {"query": user_query}
-        result = agent_app.invoke(inputs)
+        print("\nĐang suy luận...")
+        result = rag_chain.invoke(user_query)
         
-        print("\n Trả lời:")
-        print(result['answer'])
+        print("\n" + result)
         print("-" * 60)
 
 if __name__ == "__main__":
