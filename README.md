@@ -1,4 +1,4 @@
-# Hybrid RAG System - Cranfield Aerospace Dataset
+# Hybrid RAG System - Cranfield Dataset
 
 ## Overview
 This project implements a highly optimized Retrieval-Augmented Generation (RAG) pipeline designed to query and answer technical questions based on the Cranfield dataset (a collection of aerodynamics and aerospace engineering abstracts). 
