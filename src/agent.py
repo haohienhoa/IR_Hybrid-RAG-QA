@@ -1,56 +1,43 @@
-from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+import re
+import os
+from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-from src.config import LLM_MODEL, HF_TOKEN
+from langchain_core.output_parsers import BaseOutputParser
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class CleanOutputParser(BaseOutputParser):
+    def parse(self, text: str) -> str:
+        match = re.search(r"<answer>(.*?)</answer>", text, flags=re.DOTALL | re.IGNORECASE)
+        if match: return match.group(1).strip()
+        return re.sub(r"<thought>.*?</thought>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
 
 def create_rag_chain(retriever):
-    llm_endpoint = HuggingFaceEndpoint(
-        repo_id=LLM_MODEL,
-        task="text-generation",
-        max_new_tokens=1024,
+
+    llm = ChatGroq(
+        api_key=os.getenv("GROQ_API_KEY"),
+        model="llama-3.3-70b-versatile", 
         temperature=0.1,
-        do_sample=True,
-        huggingfacehub_api_token=HF_TOKEN
     )
-    llm = ChatHuggingFace(llm=llm_endpoint)
 
-    prompt_template = """You are an elite Aerospace Engineering AI. Answer the user's query using ONLY the provided Context.
-        
-PROCESS:
-1. <thought>: Analyze the context step-by-step. If the context does not contain the answer, explicitly state it here.
-2. <answer>: Provide a professional, Markdown-formatted answer. If no information is found, output "Information not found in the documents."
+    prompt_template = """Dựa vào NGỮ CẢNH dưới đây, hãy trả lời câu hỏi của người dùng bằng TIẾNG VIỆT.
+Nếu không có thông tin, hãy trả lời: "Dựa trên dữ liệu pháp lý hiện tại, tôi không tìm thấy quy định cho trường hợp này."
+Vui lòng trình bày theo format:
+<thought> (Suy luận của bạn) </thought>
+<answer> (Câu trả lời và trích dẫn luật) </answer>
 
---- FEW-SHOT EXAMPLE ---
-Context: 
-Doc 1: The wing sweepback delays the onset of wave drag.
-Query: What is the purpose of wing sweepback?
-<thought>
-The context mentions "wing sweepback" and states its effect is to "delay the onset of wave drag". I will output this as the answer.
-</thought>
-<answer>
-**Purpose of Wing Sweepback:**
-The primary purpose is to **delay the onset of wave drag**.
-</answer>
-------------------------
-
---- ACTUAL TASK ---
-Context:
+--- NGỮ CẢNH ---
 {context}
 
-Query: {query}
-"""
+---
+Câu hỏi: {query}"""
+
     prompt = PromptTemplate.from_template(prompt_template)
 
     def format_docs(docs):
-        print(f"\n[Retriever] Found {len(docs)} documents. Feeding to LLM...")
+        print(f"\n[Retriever] Đã lấy {len(docs)} điều luật. Đang gọi Llama-3 qua Groq API (Siêu tốc)...")
         return "\n\n".join([f"Doc {i+1}: {d.page_content}" for i, d in enumerate(docs)])
 
-    rag_chain = (
-        {"context": retriever | format_docs, "query": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-    
-    return rag_chain
+    return ({"context": retriever | format_docs, "query": RunnablePassthrough()} | prompt | llm | CleanOutputParser())
