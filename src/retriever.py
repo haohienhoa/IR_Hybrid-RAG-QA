@@ -1,5 +1,5 @@
 import os
-from tqdm import tqdm # Import thư viện thanh tiến trình
+from tqdm import tqdm 
 from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.vectorstores import Chroma

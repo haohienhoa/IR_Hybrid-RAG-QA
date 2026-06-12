@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from src.data_loader import load_zac_legal_docs
 from src.retriever import build_hybrid_retriever
-from src.agent import create_rag_chain
+from src.agent import create_multi_agent_system
 
 rag_chain = None
 
@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     try:
         docs = load_zac_legal_docs()
         hybrid_retriever = build_hybrid_retriever(docs)
-        rag_chain = create_rag_chain(hybrid_retriever)
+        rag_chain = create_multi_agent_system(hybrid_retriever)
         print("✅ [STARTUP] Hệ thống RAG đã sẵn sàng nhận Request!")
     except Exception as e:
         print(f"❌ [LỖI KHỞI ĐỘNG]: {e}")
