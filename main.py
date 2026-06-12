@@ -1,6 +1,6 @@
 from src.data_loader import load_zac_legal_docs
 from src.retriever import build_hybrid_retriever
-from src.agent import create_rag_chain  
+from src.agent import create_multi_agent_system
 
 def main():
     print("="*70)
@@ -11,7 +11,7 @@ def main():
     
     hybrid_retriever = build_hybrid_retriever(docs)
     
-    rag_chain = create_rag_chain(hybrid_retriever)
+    rag_chain = create_multi_agent_system(hybrid_retriever)
     
     print("\n" + "="*70)
     print(" HỆ THỐNG ĐÃ SẴN SÀNG! ".center(70, '*'))
